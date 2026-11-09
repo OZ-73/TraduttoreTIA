@@ -47,6 +47,7 @@ DEFAULT_CONFIG = {
     "file_tm": "memoria_traduzione.json",
     "file_glossario": "glossario.txt",
     "file_classi": "classi_allarme.json",
+    "escludi_graph": True,
     "categorie_allarme": ["Alarm", "ProDiag", "testi di segnalazione", "text list"],
 }
 
@@ -221,6 +222,10 @@ def is_copy_rule(core):
         return True
     return False
 
+def is_graph_name(core):
+    """Nomi di passi/transizioni S7-GRAPH (es. 'S Avanti Lav R2 A', 'T No Riv R1 A'): non si traducono."""
+    return re.match(r'^(S|T|TR|SR)\s+\S', core) is not None and '\n' not in core and len(core) < 60
+
 # ---------------------------------------------------------------- progetto Excel
 class Project:
     def __init__(self, path, cfg):
@@ -269,7 +274,7 @@ def class_row_info(vp, cat):
     return None
 
 # ---------------------------------------------------------------- piano di traduzione
-def build_plan(project, tm, classes, targets, only_cats=None):
+def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=False):
     """Calcola le celle da scrivere usando regole+classi+TM; elenca i testi ancora da tradurre."""
     edits = {}      # (riga, lettera) -> (testo, origine)
     pending = {}    # core -> set(lingue mancanti)
@@ -301,6 +306,9 @@ def build_plan(project, tm, classes, targets, only_cats=None):
             if is_copy_rule(core):
                 if cur != r['src']:
                     edits[(r['row'], letter)] = (r['src'], 'regole'); stats['regole'] += 1
+                continue
+            if exclude_graph and is_graph_name(core):
+                stats['graph_esclusi'] = stats.get('graph_esclusi', 0) + 1
                 continue
             t = tm.get(core, lang)
             if t is not None:
@@ -539,7 +547,7 @@ class Session:
 
     def plan(self):
         cats = self.cfg.get('categorie_allarme') if self.only_alarms else None
-        return build_plan(self.project, self.tm, self.classes, self.targets, cats)
+        return build_plan(self.project, self.tm, self.classes, self.targets, cats, bool(self.cfg.get('escludi_graph')))
 
     def translate_pending(self, progress=None):
         """Traduce con il modello i testi non coperti dalla TM. Salva in TM quelli che superano i controlli."""

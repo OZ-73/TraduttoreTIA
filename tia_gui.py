@@ -38,6 +38,10 @@ class App(tk.Tk):
         ttk.Checkbutton(self, text='Col modello traduci solo i testi di allarme (gli altri restano com\'erano, la memoria si applica comunque)',
                         variable=self.var_alarms, command=self.refresh_stats).pack(anchor='w', padx=10)
 
+        self.var_graph = tk.BooleanVar(value=bool(self.s.cfg.get('escludi_graph', True)))
+        ttk.Checkbutton(self, text='Non tradurre i nomi di passi e transizioni GRAPH (testi che iniziano con S, T, TR, SR)',
+                        variable=self.var_graph, command=self.on_graph).pack(anchor='w', padx=10)
+
         self.lbl_stats = ttk.Label(self, text='', justify='left'); self.lbl_stats.pack(fill='x', padx=10, pady=4)
 
         bf = ttk.LabelFrame(self, text='Operazioni', padding=6); bf.pack(fill='x', padx=8)
@@ -84,6 +88,11 @@ class App(tk.Tk):
         except queue.Empty:
             pass
         self.after(150, self._pump)
+
+    def on_graph(self):
+        self.s.cfg['escludi_graph'] = self.var_graph.get()
+        core.save_config(self.s.cfg)
+        self.refresh_stats()
 
     def targets(self):
         return [l for l, v in self.lang_vars.items() if v.get()]

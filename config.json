@@ -17,5 +17,6 @@
     "ProDiag",
     "testi di segnalazione",
     "text list"
-  ]
+  ],
+  "escludi_graph": true
 }

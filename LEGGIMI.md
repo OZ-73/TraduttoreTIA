@@ -11,6 +11,7 @@ LM Studio con il server attivo (Developer → Status: Running) e il modello cari
 5. **4. Esporta residuo (CSV)** → mandalo a Claude in chat → ricevi il CSV corretto → **5. Importa correzioni** (entrano in memoria come "rivisto", hanno la priorità).
 6. **6. Salva Excel tradotto** (con verifica cella per cella) → importa in TIA → archivia.
 
+- GRAPH: i nomi di passi e transizioni (testi che iniziano con S, T, TR, SR) non vengono tradotti (casella nella finestra, `escludi_graph` in config).
 - Per progetti grandi: spunta "Col modello traduci solo i testi di allarme" (categorie in `config.json` → `categorie_allarme`; CLI: `--solo-allarmi`).
 
 ## File
