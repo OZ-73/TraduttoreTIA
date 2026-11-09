@@ -1,0 +1,8 @@
+# La memoria di traduzione contiene testi dei progetti dei clienti: NON va nel repository
+memoria_traduzione.json
+*.xlsx
+*.csv
+__pycache__/
+build/
+dist/
+*.spec

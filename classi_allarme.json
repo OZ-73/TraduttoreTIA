@@ -1,0 +1,92 @@
+{
+ "Allarmi": {
+  "en-US": {
+   "nome": "Alarms",
+   "sigla": "AL"
+  },
+  "de-DE": {
+   "nome": "Alarme",
+   "sigla": "AL"
+  }
+ },
+ "Drive": {
+  "en-US": {
+   "nome": "Drive",
+   "sigla": "DR"
+  },
+  "de-DE": {
+   "nome": "Antrieb",
+   "sigla": "AN"
+  }
+ },
+ "Allarmi da Confermare": {
+  "en-US": {
+   "nome": "Alarms requiring acknowledgement",
+   "sigla": "AA"
+  },
+  "de-DE": {
+   "nome": "Zu quittierende Alarme",
+   "sigla": "ZQ"
+  }
+ },
+ "Allarmi di Emergenza": {
+  "en-US": {
+   "nome": "Emergency alarms",
+   "sigla": "EM"
+  },
+  "de-DE": {
+   "nome": "Notfallalarme",
+   "sigla": "NF"
+  }
+ },
+ "Errore Operativo": {
+  "en-US": {
+   "nome": "Operating error",
+   "sigla": "OE"
+  },
+  "de-DE": {
+   "nome": "Bedienfehler",
+   "sigla": "BF"
+  }
+ },
+ "Allarmi Gravi": {
+  "en-US": {
+   "nome": "Serious alarms",
+   "sigla": "SR"
+  },
+  "de-DE": {
+   "nome": "Schwere Alarme",
+   "sigla": "SA"
+  }
+ },
+ "Manutenzione": {
+  "en-US": {
+   "nome": "Maintenance",
+   "sigla": "MT"
+  },
+  "de-DE": {
+   "nome": "Wartung",
+   "sigla": "WA"
+  }
+ },
+ "Manutenzione Predittiva": {
+  "en-US": {
+   "nome": "Predictive maintenance",
+   "sigla": "PM"
+  },
+  "de-DE": {
+   "nome": "Vorausschauende Wartung",
+   "sigla": "VW"
+  }
+ },
+ "Anomalie": {
+  "en-US": {
+   "nome": "Anomalies",
+   "sigla": "W"
+  },
+  "de-DE": {
+   "nome": "Anomalien",
+   "sigla": "W"
+  }
+ }
+}

@@ -1,0 +1,15 @@
+{
+  "url": "http://localhost:1234/v1/chat/completions",
+  "modello": "openai/gpt-oss-120b",
+  "dimensione_lotto": 10,
+  "temperatura": 0.2,
+  "reasoning_effort": "low",
+  "timeout_s": 1800,
+  "lingua_origine": "it-IT",
+  "percentuale_campione": 10,
+  "applica_bozze_da_rivedere": false,
+  "esempi_nel_prompt": 12,
+  "file_tm": "memoria_traduzione.json",
+  "file_glossario": "glossario.txt",
+  "file_classi": "classi_allarme.json"
+}

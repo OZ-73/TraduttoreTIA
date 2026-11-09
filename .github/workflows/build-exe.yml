@@ -1,0 +1,25 @@
+name: Build exe Windows
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pyinstaller openpyxl
+      - run: pyinstaller --onefile --windowed --name TraduttoreTIA tia_gui.py
+      - name: Prepara cartella di rilascio
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release | Out-Null
+          Copy-Item dist/TraduttoreTIA.exe release/
+          Copy-Item glossario.txt, classi_allarme.json, config.json, LEGGIMI.md release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TraduttoreTIA-windows
+          path: release

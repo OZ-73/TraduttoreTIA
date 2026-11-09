@@ -1,0 +1,24 @@
+# lingue: en-US, de-DE
+# Formato: termine italiano[/alternativa] | traduzione en[/alternativa] | traduzione de[/alternativa]   ('=' = invariato)
+PRI | = | =
+Cmd | Cmd | Befehl
+Rsp | Resp. | Antw.
+Ap./App./Appoggio | Aux. | Hilfs.
+Avanzatore | Feeder | Vorschub
+Manipolatore | Manipulator | Manipulator
+Morse | Clamps | Spannbacken
+Pinze | Grippers | Greifer
+Scassettatore | Box unloader | Kistenentleerer
+Scivolo | Chute | Rutsche
+Quota | Position | Position
+Fuori Ingombri | Clear of obstructions | Außerhalb des Störbereichs
+Salvamotore | Motor protection | Motorschutz
+Teleruttore | Contactor | Schütz
+Contapezzi | Part counter | Stückzähler
+Mandrini | Spindles | Spindeln
+Inverter | Inverter | Umrichter
+EV | = | =
+MC | = | =
+STO | = | =
+HMI | = | =
+PLC | = | =
