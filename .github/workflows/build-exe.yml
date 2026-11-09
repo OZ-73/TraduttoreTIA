@@ -12,7 +12,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pyinstaller openpyxl
-      - run: pyinstaller --onefile --windowed --name TraduttoreTIA tia_gui.py
+      - run: pyinstaller --onefile --windowed --name TraduttoreTIA --icon icona.ico --add-data "icona.ico;." tia_gui.py
       - name: Prepara cartella di rilascio
         shell: pwsh
         run: |

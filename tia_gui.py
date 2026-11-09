@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Traduttore TIA - finestra con i pulsanti (tkinter)."""
-import os, threading, queue
+import os, sys, threading, queue
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import tia_core as core
@@ -10,6 +10,11 @@ class App(tk.Tk):
         super().__init__()
         self.title('Traduttore TIA - motore offline (LM Studio)')
         self.geometry('900x640')
+        try:
+            base = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+            self.iconbitmap(os.path.join(base, 'icona.ico'))
+        except Exception:
+            pass
         self.q = queue.Queue()
         self.s = core.Session(log=lambda m: self.q.put(('log', m)))
         self.lang_vars = {}
