@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     "file_tm": "memoria_traduzione.json",
     "file_glossario": "glossario.txt",
     "file_classi": "classi_allarme.json",
-    "categorie_allarme": ["Alarm", "ProDiag"],
+    "categorie_allarme": ["Alarm", "ProDiag", "testi di segnalazione", "text list"],
 }
 
 def load_config(path=None):
@@ -310,7 +310,7 @@ def build_plan(project, tm, classes, targets, only_cats=None):
                 if cur != val:
                     edits[(r['row'], letter)] = (val, 'tm'); stats['tm'] += 1
             else:
-                if only_cats and not any(c in r['cat'] for c in only_cats):
+                if only_cats and not any(c in r['cat'] or c in r['vp'] for c in only_cats):
                     stats['fuori_filtro'] = stats.get('fuori_filtro', 0) + 1
                     continue
                 pending.setdefault(core, set()).add(lang)

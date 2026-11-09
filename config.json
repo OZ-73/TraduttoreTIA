@@ -11,5 +11,11 @@
   "esempi_nel_prompt": 12,
   "file_tm": "memoria_traduzione.json",
   "file_glossario": "glossario.txt",
-  "file_classi": "classi_allarme.json"
+  "file_classi": "classi_allarme.json",
+  "categorie_allarme": [
+    "Alarm",
+    "ProDiag",
+    "testi di segnalazione",
+    "text list"
+  ]
 }
