@@ -18,5 +18,12 @@
     "testi di segnalazione",
     "text list"
   ],
-  "escludi_graph": true
+  "escludi_graph": true,
+  "controllo_lunghezza_hmi": true,
+  "categorie_hmi": [
+    "HMI screen",
+    "HMI runtime"
+  ],
+  "hmi_soglia_percentuale": 20,
+  "hmi_margine_minimo": 2
 }

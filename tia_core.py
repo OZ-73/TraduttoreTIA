@@ -49,6 +49,11 @@ DEFAULT_CONFIG = {
     "file_classi": "classi_allarme.json",
     "escludi_graph": True,
     "categorie_allarme": ["Alarm", "ProDiag", "testi di segnalazione", "text list"],
+    # testi HMI: lo spazio nell'oggetto e' limitato, la traduzione non deve sforare
+    "controllo_lunghezza_hmi": True,
+    "categorie_hmi": ["HMI screen", "HMI runtime"],     # i commenti HMI non si vedono a video: nessun limite
+    "hmi_soglia_percentuale": 20,                        # max. % in piu' dei caratteri dell'originale (per riga)
+    "hmi_margine_minimo": 2,                             # ...ma sempre almeno +2 caratteri (testi brevissimi)
 }
 
 def load_config(path=None):
@@ -182,8 +187,46 @@ def prefix_tokens(s):
     lead = re.match(r'^([<>*!\-0-9\s]*)', s).group(1) if s else ''
     return (m.group(1).strip() if m else ''), lead.strip()
 
-def check_translation(src, tr, lang, glossary):
-    """Ritorna la lista dei motivi per cui la traduzione va rivista (vuota = ok)."""
+# ---------------------------------------------------------------- lunghezza testi HMI
+HMI_SUFFIX = '@hmi'     # la TM tiene la versione breve sotto la chiave "<lingua>@hmi", accanto a quella normale
+
+def hmi_settings(cfg):
+    """None se il controllo e' spento, altrimenti dict con categorie, soglia %, margine minimo."""
+    if not cfg.get('controllo_lunghezza_hmi', True):
+        return None
+    cats = [c.lower() for c in cfg.get('categorie_hmi', []) if c]
+    if not cats:
+        return None
+    return {'cats': cats, 'pct': float(cfg.get('hmi_soglia_percentuale', 20)),
+            'margine': int(cfg.get('hmi_margine_minimo', 2))}
+
+def is_hmi_row(cat, vp, hmi):
+    if not hmi:
+        return False
+    s = ('%s %s' % (cat, vp)).lower()
+    return any(c in s for c in hmi['cats'])
+
+def hmi_max_len(n, hmi):
+    """Caratteri massimi per una riga lunga n nell'originale."""
+    return max(int(n * (1 + hmi['pct'] / 100.0) + 1e-9), n + hmi['margine'])
+
+def _vis(line):
+    """Lunghezza visibile: i segnaposto <field/> (valori a runtime) non contano."""
+    return len(FIELD_RE.sub('', line).strip())
+
+def hmi_overflow(src, tr, hmi):
+    """Prima riga della traduzione che supera il limite: (lunghezza, massimo), oppure None."""
+    if not hmi:
+        return None
+    for s, t in zip(src.split('\n'), tr.split('\n')):
+        n = _vis(s)
+        if n and _vis(t) > hmi_max_len(n, hmi):
+            return _vis(t), hmi_max_len(n, hmi)
+    return None
+
+def check_translation(src, tr, lang, glossary, hmi=None):
+    """Ritorna la lista dei motivi per cui la traduzione va rivista (vuota = ok).
+    hmi: impostazioni di hmi_settings() se il testo e' per un oggetto HMI (limite di lunghezza)."""
     r = []
     if not tr.strip():
         return ['vuota']
@@ -205,6 +248,9 @@ def check_translation(src, tr, lang, glossary):
         r.append('identica all\'originale')
     if len(tr) > max(4 * len(src), 40) and len(tr) > 3 * len(src):
         r.append('molto piu\' lunga dell\'originale')
+    ov = hmi_overflow(src, tr, hmi)
+    if ov:
+        r.append('troppo lunga per HMI (%d car., max %d)' % ov)
     r += glossary.check(src, tr, lang)
     return r
 
@@ -275,15 +321,20 @@ def class_row_info(vp, cat):
     return None
 
 # ---------------------------------------------------------------- piano di traduzione
-def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=False):
-    """Calcola le celle da scrivere usando regole+classi+TM; elenca i testi ancora da tradurre."""
+def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=False, hmi=None):
+    """Calcola le celle da scrivere usando regole+classi+TM; elenca i testi ancora da tradurre.
+    hmi: hmi_settings() -> sulle righe HMI la traduzione deve stare nel limite di lunghezza:
+    si usa la versione breve della TM ("<lingua>@hmi"); se manca e quella normale sfora, il testo va in
+    stats['pending_hmi'] (core -> lingue) per essere riscritto in forma breve."""
     edits = {}      # (riga, lettera) -> (testo, origine)
     pending = {}    # core -> set(lingue mancanti)
+    pending_hmi = {}
     notes = []
     stats = {'righe': len(project.rows), 'celle_da_compilare': 0, 'tm': 0, 'regole': 0, 'classi': 0}
     for r in project.rows:
         lead, core, trail = split_ws(r['src'])
         ci = class_row_info(r['vp'], r['cat'])
+        row_hmi = is_hmi_row(r['cat'], r['vp'], hmi)
         for lang in targets:
             cur = r['cur'].get(lang, '')
             if ci:
@@ -311,7 +362,11 @@ def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=Fals
             if exclude_graph and is_graph_row(r['vp']):
                 stats['graph_esclusi'] = stats.get('graph_esclusi', 0) + 1
                 continue
-            t = tm.get(core, lang)
+            t = tm.get(core, lang + HMI_SUFFIX) if row_hmi else None
+            if t is None:
+                t = tm.get(core, lang)
+                if t is not None and row_hmi and hmi_overflow(core, core if t == '=' else t, hmi):
+                    t = None        # la traduzione normale sfora l'oggetto HMI: serve la versione breve
             if t is not None:
                 if t == '=':
                     t = core
@@ -322,7 +377,8 @@ def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=Fals
                 if only_cats and not any(c in r['cat'] or c in r['vp'] for c in only_cats):
                     stats['fuori_filtro'] = stats.get('fuori_filtro', 0) + 1
                     continue
-                pending.setdefault(core, set()).add(lang)
+                (pending_hmi if row_hmi else pending).setdefault(core, set()).add(lang)
+    stats['pending_hmi'] = pending_hmi
     return edits, pending, stats, sorted(set(notes))
 
 # ---------------------------------------------------------------- motore (LM Studio / OpenAI-compatibile)
@@ -353,8 +409,15 @@ def clean(s):
     s = s.replace('‑', '-').replace('‐', '-').replace(' ', ' ')
     return s.strip()
 
-def translate_batch(cfg, cores, langs, tm, glossary):
-    """cores: lista di testi origine (puliti). I testi multiriga sono tradotti riga per riga."""
+HMI_PROMPT = """
+ATTENZIONE - testi per oggetti di una schermata HMI: lo spazio e' limitato e un testo piu' lungo esce dall'oggetto.
+Ogni traduzione deve essere BREVE: al massimo il numero di caratteri indicato in LIMITI (per riga numerata).
+Per rientrare usa abbreviazioni tecniche usuali (Pos., Man., Aut., Temp., Press., Vel., Max/Min...), togli articoli e
+parole accessorie, senza cambiare il senso e rispettando il glossario. Meglio una traduzione corta e chiara che completa e troncata."""
+
+def translate_batch(cfg, cores, langs, tm, glossary, hmi=None):
+    """cores: lista di testi origine (puliti). I testi multiriga sono tradotti riga per riga.
+    hmi: hmi_settings() -> modalita' HMI (traduzioni brevi, limiti per riga indicati al modello)."""
     segs = []   # (indice_core, indice_riga, testo)
     for i, c in enumerate(cores):
         for j, line in enumerate(c.split('\n')):
@@ -372,6 +435,10 @@ def translate_batch(cfg, cores, langs, tm, glossary):
         '\n\nGlossario:\n' + glossary.for_prompt(langs)
     if ex:
         prompt += '\n\nEsempi gia\' approvati (italiano ## ' + ' ## '.join(langs) + '):\n' + '\n'.join(ex)
+    if hmi:
+        prompt += '\n' + HMI_PROMPT
+        prompt += '\n\nLIMITI (riga: caratteri massimi): ' + ' ; '.join(
+            '%d: %d' % (n, hmi_max_len(_vis(s[2]), hmi)) for n, s in items if _vis(s[2])) + '\n'
     prompt += '\n\nTESTI:\n' + '\n'.join('%d ## %s' % (n, s[2].replace('\n', '\\n')) for n, s in items) + '\n'
     out, ntok = chat(cfg, prompt)
     parsed = {}
@@ -417,6 +484,7 @@ def import_corrections(path, tm, langs):
         rd = csv.reader(f, delimiter=';')
         head = next(rd)
         cols = {}
+        mot = next((i for i, h in enumerate(head) if h.strip().lower() == 'motivo'), None)
         for l in langs:
             for i, h in enumerate(head):
                 if h.strip() in ('bozza ' + l, l):
@@ -425,9 +493,12 @@ def import_corrections(path, tm, langs):
             if len(row) < 2 or not row[1].strip():
                 continue
             core = row[1].strip() if '\n' not in row[1] else row[1].strip()
+            # righe del residuo HMI (motivo "HMI | ...") -> versione breve, separata da quella normale
+            is_hmi = mot is not None and mot < len(row) and row[mot].strip().upper().startswith('HMI')
             for l, i in cols.items():
                 if i < len(row) and row[i].strip():
-                    tm.put(core, l, row[i].strip('\r') if '\n' in row[i] else row[i].strip(), 'rivisto')
+                    tm.put(core, l + HMI_SUFFIX if is_hmi else l,
+                           row[i].strip('\r') if '\n' in row[i] else row[i].strip(), 'rivisto')
                     n += 1
     return n
 
@@ -531,7 +602,8 @@ class Session:
         self.project = None
         self.targets = []
         self.drafts = {}      # core -> {lingua: testo} (bozze non validate)
-        self.review = []      # [{core, bozza, motivi}]
+        self.review = []      # [{core, bozza, motivi, hmi?, fallito?}]
+        self.pending_hmi = {}   # core -> lingue: testi HMI da scrivere in forma breve (aggiornato da plan())
         self.stop = False
         self.only_alarms = False
 
@@ -548,59 +620,93 @@ class Session:
 
     def plan(self):
         cats = self.cfg.get('categorie_allarme') if self.only_alarms else None
-        return build_plan(self.project, self.tm, self.classes, self.targets, cats, bool(self.cfg.get('escludi_graph')))
+        res = build_plan(self.project, self.tm, self.classes, self.targets, cats,
+                         bool(self.cfg.get('escludi_graph')), hmi_settings(self.cfg))
+        self.pending_hmi = res[2].pop('pending_hmi', {})
+        res[2]['hmi_da_accorciare'] = len(self.pending_hmi)
+        return res
+
+    def prune_review(self):
+        """Toglie dalla revisione i testi ormai coperti dalla TM (dopo l'importazione delle correzioni)."""
+        keep = []
+        for r in self.review:
+            suf = HMI_SUFFIX if r.get('hmi') else ''
+            if r.get('fallito') and all(self.tm.get(r['core'], l + suf) for l in self.targets):
+                if not r.get('hmi'):
+                    self.drafts.pop(r['core'], None)
+                continue
+            keep.append(r)
+        self.review = keep
 
     def translate_pending(self, progress=None):
-        """Traduce con il modello i testi non coperti dalla TM. Salva in TM quelli che superano i controlli."""
+        """Traduce con il modello i testi non coperti dalla TM. Salva in TM quelli che superano i controlli.
+        I testi HMI (limite di lunghezza) sono tradotti a parte, in forma breve."""
         edits, pending, stats, notes = self.plan()
-        cores = sorted(pending)
         langs = list(self.targets)
+        hmi = hmi_settings(self.cfg)
+        groups = [(sorted(pending), pending, None)]
+        if self.pending_hmi:
+            groups.append((sorted(self.pending_hmi), self.pending_hmi, hmi))
+        total = sum(len(g[0]) for g in groups)
         bs = int(self.cfg.get('dimensione_lotto', 10))
         pct = float(self.cfg.get('percentuale_campione', 0)) / 100.0
         self.stop = False
         done = 0
         t0 = time.time()
         tokens = 0
-        for i in range(0, len(cores), bs):
+        for cores, pend, mode in groups:
+            suf = HMI_SUFFIX if mode else ''
+            for i in range(0, len(cores), bs):
+                if self.stop:
+                    self.log('Interrotto dall\'utente.')
+                    break
+                batch = cores[i:i + bs]
+                try:
+                    res, nt = translate_batch(self.cfg, batch, langs, self.tm, self.glossary, mode)
+                except Exception as e:
+                    self.log('ERRORE di connessione al modello: %s' % e)
+                    raise
+                tokens += nt
+                for core, (tr, missing) in zip(batch, res):
+                    motivi = []
+                    if missing:
+                        motivi.append('risposta incompleta')
+                    for l in langs:
+                        motivi += ['%s: %s' % (l, m) for m in check_translation(core, tr[l], l, self.glossary, mode)]
+                    if mode:
+                        item = {'core': core, 'bozza': tr, 'hmi': True}
+                        marker = ['HMI']        # il residuo importato finisce nella versione breve
+                    else:
+                        item = {'core': core, 'bozza': tr}
+                        marker = []
+                    if motivi:
+                        if not mode:
+                            self.drafts[core] = tr
+                        item.update(motivi=marker + motivi, fallito=True)
+                        self.review.append(item)
+                    else:
+                        for l in pend[core]:
+                            self.tm.put(core, l + suf, tr[l], 'modello')
+                        if pct and random.random() < pct:
+                            item['motivi'] = marker + ['campione di controllo']
+                            self.review.append(item)
+                done += len(batch)
+                self.tm.save()   # salvataggio a ogni lotto: nulla va perso se l'app si chiude
+                if progress:
+                    progress(done, total, time.time() - t0, tokens)
             if self.stop:
-                self.log('Interrotto dall\'utente.')
                 break
-            batch = cores[i:i + bs]
-            try:
-                res, nt = translate_batch(self.cfg, batch, langs, self.tm, self.glossary)
-            except Exception as e:
-                self.log('ERRORE di connessione al modello: %s' % e)
-                raise
-            tokens += nt
-            for core, (tr, missing) in zip(batch, res):
-                motivi = []
-                if missing:
-                    motivi.append('risposta incompleta')
-                for l in langs:
-                    if l in pending[core] or True:
-                        motivi += ['%s: %s' % (l, m) for m in check_translation(core, tr[l], l, self.glossary)]
-                if motivi:
-                    self.drafts[core] = tr
-                    self.review.append({'core': core, 'bozza': tr, 'motivi': motivi})
-                else:
-                    for l in pending[core]:
-                        self.tm.put(core, l, tr[l], 'modello')
-                    if pct and random.random() < pct:
-                        self.review.append({'core': core, 'bozza': tr, 'motivi': ['campione di controllo']})
-            done += len(batch)
-            self.tm.save()   # salvataggio a ogni lotto: nulla va perso se l'app si chiude
-            if progress:
-                progress(done, len(cores), time.time() - t0, tokens)
         self.tm.save()
-        return len(cores), len(self.review)
+        return total, len(self.review)
 
     def save_excel(self, out_path):
         edits, pending, stats, notes = self.plan()
         final = {k: v[0] for k, v in edits.items()}
         if self.cfg.get('applica_bozze_da_rivedere'):
+            hmi = hmi_settings(self.cfg)
             for r in self.project.rows:
                 core = r['src'].strip()
-                if core in self.drafts:
+                if core in self.drafts and not is_hmi_row(r['cat'], r['vp'], hmi):   # HMI: mai bozze lunghe
                     lead, _, trail = split_ws(r['src'])
                     for l in self.targets:
                         if is_placeholder(r['cur'][l], r['src']):
@@ -609,4 +715,5 @@ class Session:
         ok, skipped = write_edits(self.project.path, out_path, sheet, final)
         diff, bad = verify_output(self.project.path, out_path, sheet, final)
         return {'scritte': ok, 'saltate': len(skipped), 'modificate': diff, 'anomalie': bad,
-                'ancora_da_tradurre': len([c for c in pending if c not in self.drafts or not self.cfg.get('applica_bozze_da_rivedere')])}
+                'ancora_da_tradurre': len([c for c in pending if c not in self.drafts or not self.cfg.get('applica_bozze_da_rivedere')])
+                                      + len(self.pending_hmi)}

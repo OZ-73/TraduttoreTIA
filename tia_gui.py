@@ -126,9 +126,11 @@ class App(tk.Tk):
             self.s.only_alarms = self.var_alarms.get()
             e, p, st, notes = self.s.plan()
             self.lbl_stats.config(text='Righe: %d   Celle da compilare: %d\n'
-                                       'Coperte da memoria: %d   regole: %d   classi allarme: %d   ancora da tradurre (testi distinti): %d\n'
+                                       'Coperte da memoria: %d   regole: %d   classi allarme: %d   ancora da tradurre (testi distinti): %d'
+                                       '   (di cui HMI da scrivere brevi: %d)\n'
                                        'In revisione (bozze/campione): %d' %
-                                  (st['righe'], st['celle_da_compilare'], st['tm'], st['regole'], st['classi'], len(p), len(self.s.review)))
+                                  (st['righe'], st['celle_da_compilare'], st['tm'], st['regole'], st['classi'],
+                                   len(p) + len(self.s.pending_hmi), len(self.s.pending_hmi), len(self.s.review)))
         except Exception as ex:
             self.lbl_stats.config(text='Errore analisi: %s' % ex)
 
@@ -158,13 +160,13 @@ class App(tk.Tk):
             self.log('Analisi: %s' % st)
             for n in notes[:20]:
                 self.log('  nota: ' + n)
-            self.log('Testi da tradurre col modello: %d' % len(p))
+            self.log('Testi da tradurre col modello: %d (HMI da scrivere brevi: %d)' % (len(p) + len(self.s.pending_hmi), len(self.s.pending_hmi)))
 
     def on_translate(self):
         if not self.need_file():
             return
         self.s.reload_resources()
-        n = len(self.s.plan()[1])
+        n = len(self.s.plan()[1]) + len(self.s.pending_hmi)
         if n == 0:
             messagebox.showinfo('Traduttore TIA', 'Niente da tradurre: tutto è coperto dalla memoria.'); return
         if not messagebox.askyesno('Traduttore TIA', 'Tradurre %d testi con il modello "%s"?\n(LM Studio deve avere il server attivo.)' % (n, self.s.cfg['modello'])):
@@ -194,10 +196,7 @@ class App(tk.Tk):
             return
         n = core.import_corrections(p, self.s.tm, self.targets())
         self.s.tm.save()
-        done = {k for k in self.s.drafts if all(self.s.tm.get(k, l) for l in self.targets())}
-        for k in done:
-            self.s.drafts.pop(k, None)
-        self.s.review = [r for r in self.s.review if r['core'] not in done]
+        self.s.prune_review()
         self.log('Importate %d traduzioni nella memoria (stato "rivisto").' % n)
         self.refresh_stats()
 
@@ -240,7 +239,9 @@ class App(tk.Tk):
         w = tk.Toplevel(self); w.title('Impostazioni'); w.grab_set()
         keys = [('url', 'Indirizzo server'), ('modello', 'Modello'), ('dimensione_lotto', 'Testi per richiesta'),
                 ('percentuale_campione', 'Campione di controllo %'), ('reasoning_effort', 'Reasoning (low/medium/high)'),
-                ('esempi_nel_prompt', 'Esempi dalla memoria nel prompt'), ('timeout_s', 'Timeout (s)')]
+                ('esempi_nel_prompt', 'Esempi dalla memoria nel prompt'), ('timeout_s', 'Timeout (s)'),
+                ('hmi_soglia_percentuale', 'HMI: max. % di caratteri in più dell\'originale'),
+                ('hmi_margine_minimo', 'HMI: margine minimo (caratteri)')]
         vars_ = {}
         for i, (k, lab) in enumerate(keys):
             ttk.Label(w, text=lab).grid(row=i, column=0, sticky='w', padx=6, pady=3)
@@ -248,6 +249,9 @@ class App(tk.Tk):
             ttk.Entry(w, textvariable=v, width=45).grid(row=i, column=1, padx=6)
         bv = tk.BooleanVar(value=bool(self.s.cfg.get('applica_bozze_da_rivedere')))
         ttk.Checkbutton(w, text='Scrivi nell\'Excel anche le bozze da rivedere', variable=bv).grid(row=len(keys), column=0, columnspan=2, sticky='w', padx=6)
+        hv = tk.BooleanVar(value=bool(self.s.cfg.get('controllo_lunghezza_hmi', True)))
+        ttk.Checkbutton(w, text='Controlla la lunghezza dei testi HMI (categorie in config.json → categorie_hmi)',
+                        variable=hv).grid(row=len(keys) + 2, column=0, columnspan=2, sticky='w', padx=6)
         def ok():
             for k, v in vars_.items():
                 old = self.s.cfg.get(k)
@@ -259,8 +263,9 @@ class App(tk.Tk):
                 except ValueError:
                     messagebox.showerror('Impostazioni', 'Valore non valido per %s' % k); return
             self.s.cfg['applica_bozze_da_rivedere'] = bv.get()
-            core.save_config(self.s.cfg); w.destroy()
-        ttk.Button(w, text='Salva', command=ok).grid(row=len(keys) + 1, column=1, sticky='e', padx=6, pady=8)
+            self.s.cfg['controllo_lunghezza_hmi'] = hv.get()
+            core.save_config(self.s.cfg); w.destroy(); self.refresh_stats()
+        ttk.Button(w, text='Salva', command=ok).grid(row=len(keys) + 3, column=1, sticky='e', padx=6, pady=8)
 
 def main():
     App().mainloop()
