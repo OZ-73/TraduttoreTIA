@@ -15,10 +15,24 @@ Fuori Ingombri | Clear of obstructions | Außerhalb des Störbereichs
 Salvamotore | Motor protection | Motorschutz
 Teleruttore | Contactor | Schütz
 Contapezzi | Part counter | Stückzähler
-Mandrini | Spindles | Spindeln
+Mandrini/Mandrino | Spindles/Spindle | Spindeln/Spindel
 Inverter | Inverter | Umrichter
 EV | = | =
 MC | = | =
 STO | = | =
 HMI | = | =
 PLC | = | =
+Rivettatrice | Rivet press | Nietpresse
+Rivetto/Rivetti | Rivet/Rivets | Niet/Nieten
+Vibratore | Vibratory feeder | Vibrationsförderer
+Foratrice | Drilling machine | Bohrmaschine
+Foro/Fori | Hole/Holes | Bohrung/Bohrungen
+Anteriore | Front | Vorderseite
+Posteriore | Rear | Rückseite
+Cassonetto | Bin | Behälter
+Contropunta | Counter stop | Gegenanschlag
+Sparo | Shooting | Schuss
+Scatolati | Box section | Kastenprofil
+Lunotti | Crescent plates | Halbmondbleche
+Avanzamento | Feed | Vorschub
+Consenso | Enable | Freigabe
