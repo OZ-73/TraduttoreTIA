@@ -39,7 +39,7 @@ class App(tk.Tk):
                         variable=self.var_alarms, command=self.refresh_stats).pack(anchor='w', padx=10)
 
         self.var_graph = tk.BooleanVar(value=bool(self.s.cfg.get('escludi_graph', True)))
-        ttk.Checkbutton(self, text='Non tradurre i nomi di passi e transizioni GRAPH (testi che iniziano con S, T, TR, SR)',
+        ttk.Checkbutton(self, text='Non tradurre i nomi di passi e transizioni GRAPH (liste di sistema StepNames / TransitionNames)',
                         variable=self.var_graph, command=self.on_graph).pack(anchor='w', padx=10)
 
         self.lbl_stats = ttk.Label(self, text='', justify='left'); self.lbl_stats.pack(fill='x', padx=10, pady=4)

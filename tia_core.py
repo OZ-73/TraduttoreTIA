@@ -222,9 +222,10 @@ def is_copy_rule(core):
         return True
     return False
 
-def is_graph_name(core):
-    """Nomi di passi/transizioni S7-GRAPH (es. 'S Avanti Lav R2 A', 'T No Riv R1 A'): non si traducono."""
-    return re.match(r'^(S|T|TR|SR)\s+\S', core) is not None and '\n' not in core and len(core) < 60
+def is_graph_row(vp):
+    """Nomi di passi/transizioni S7-GRAPH: liste di testi di sistema SYSTEM_StepNames* / SYSTEM_TransitionNames*.
+    Si riconoscono dal percorso, non dal testo: nessun falso positivo sulle convenzioni di nome."""
+    return 'SYSTEM_StepNames' in vp or 'SYSTEM_TransitionNames' in vp
 
 # ---------------------------------------------------------------- progetto Excel
 class Project:
@@ -307,7 +308,7 @@ def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=Fals
                 if cur != r['src']:
                     edits[(r['row'], letter)] = (r['src'], 'regole'); stats['regole'] += 1
                 continue
-            if exclude_graph and is_graph_name(core):
+            if exclude_graph and is_graph_row(r['vp']):
                 stats['graph_esclusi'] = stats.get('graph_esclusi', 0) + 1
                 continue
             t = tm.get(core, lang)
