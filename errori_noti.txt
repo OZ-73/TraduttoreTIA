@@ -30,7 +30,7 @@ termine ; en ; avanzator ; advancer ; Feeder ; l'avanzatore alimenta la macchina
 termine ; es ; avanzator ; \bavanzador\b|\badelantad\w* ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador
 termine ; es ; ^\s*(mc\s+)?avanzator[ei]\s*$ ; \bavance\b ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador (avance = avanzamento)
 termine ; pl ; flang ; bloczek|bloczk\w* ; Kołnierz ; bloczek = blocchetto; flangia = kołnierz
-termine ; es ; rullatur ; rodante ; Laminación ; rodante = che rotola
+termine ; es ; rullatur ; rodante|laminaci\w+|rodill\w+ ; Ranurado ; la rullatura imprime solchi profilati sulla testa del tubo: ranurado
 termine ; en ; \bquot[ae]\b|\bquote\b ; \bquotas?\b|\bquotes?\b ; Position ; le quote sono le posizioni (glossario: Quota = Position)
 termine ; es ; \bquot[ae]\b|\bquote\b ; acciones ; Posiciones ; acciones = azioni (finanza); le quote sono le posizioni
 termine ; en ; \bmedi[oa]\b ; \bmedium\b ; Average ; medium = di taglia media; il valore medio e' average
