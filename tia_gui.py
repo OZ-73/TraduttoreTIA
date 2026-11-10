@@ -220,7 +220,7 @@ class App(tk.Tk):
             return
         try:
             other = core.Project(p, self.s.cfg)
-            n = core.learn_from_project(other, self.s.tm, [l for l in other.targets])
+            n = core.learn_from_project(other, self.s.tm, [l for l in other.targets], core.hmi_settings(self.s.cfg))
             self.s.tm.save()
             self.log('Appresi %d nuovi testi da %s.' % (n, os.path.basename(p)))
             self.refresh_stats()

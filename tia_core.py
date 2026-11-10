@@ -53,6 +53,7 @@ DEFAULT_CONFIG = {
     "controllo_lunghezza_hmi": True,
     "categorie_hmi": ["HMI screen", "HMI runtime"],     # i commenti HMI non si vedono a video: nessun limite
     "hmi_soglia_percentuale": 20,                        # max. % in piu' dei caratteri dell'originale (per riga)
+    "hmi_soglia_per_lingua": {"pl-PL": 30},              # eccezioni per lingua (il polacco e' strutturalmente piu' lungo)
     "hmi_margine_minimo": 2,                             # ...ma sempre almeno +2 caratteri (testi brevissimi)
 }
 
@@ -198,7 +199,8 @@ def hmi_settings(cfg):
     if not cats:
         return None
     return {'cats': cats, 'pct': float(cfg.get('hmi_soglia_percentuale', 20)),
-            'margine': int(cfg.get('hmi_margine_minimo', 2))}
+            'margine': int(cfg.get('hmi_margine_minimo', 2)),
+            'per_lingua': {k: float(v) for k, v in (cfg.get('hmi_soglia_per_lingua') or {}).items()}}
 
 def is_hmi_row(cat, vp, hmi):
     if not hmi:
@@ -206,22 +208,23 @@ def is_hmi_row(cat, vp, hmi):
     s = ('%s %s' % (cat, vp)).lower()
     return any(c in s for c in hmi['cats'])
 
-def hmi_max_len(n, hmi):
-    """Caratteri massimi per una riga lunga n nell'originale."""
-    return max(int(n * (1 + hmi['pct'] / 100.0) + 1e-9), n + hmi['margine'])
+def hmi_max_len(n, hmi, lang=None):
+    """Caratteri massimi per una riga lunga n nell'originale (soglia propria della lingua, se impostata)."""
+    pct = hmi.get('per_lingua', {}).get(lang, hmi['pct'])
+    return max(int(n * (1 + pct / 100.0) + 1e-9), n + hmi['margine'])
 
 def _vis(line):
     """Lunghezza visibile: i segnaposto <field/> (valori a runtime) non contano."""
     return len(FIELD_RE.sub('', line).strip())
 
-def hmi_overflow(src, tr, hmi):
+def hmi_overflow(src, tr, hmi, lang=None):
     """Prima riga della traduzione che supera il limite: (lunghezza, massimo), oppure None."""
     if not hmi:
         return None
     for s, t in zip(src.split('\n'), tr.split('\n')):
         n = _vis(s)
-        if n and _vis(t) > hmi_max_len(n, hmi):
-            return _vis(t), hmi_max_len(n, hmi)
+        if n and _vis(t) > hmi_max_len(n, hmi, lang):
+            return _vis(t), hmi_max_len(n, hmi, lang)
     return None
 
 def check_translation(src, tr, lang, glossary, hmi=None):
@@ -248,7 +251,7 @@ def check_translation(src, tr, lang, glossary, hmi=None):
         r.append('identica all\'originale')
     if len(tr) > max(4 * len(src), 40) and len(tr) > 3 * len(src):
         r.append('molto piu\' lunga dell\'originale')
-    ov = hmi_overflow(src, tr, hmi)
+    ov = hmi_overflow(src, tr, hmi, lang)
     if ov:
         r.append('troppo lunga per HMI (%d car., max %d)' % ov)
     r += glossary.check(src, tr, lang)
@@ -365,7 +368,7 @@ def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=Fals
             t = tm.get(core, lang + HMI_SUFFIX) if row_hmi else None
             if t is None:
                 t = tm.get(core, lang)
-                if t is not None and row_hmi and hmi_overflow(core, core if t == '=' else t, hmi):
+                if t is not None and row_hmi and hmi_overflow(core, core if t == '=' else t, hmi, lang):
                     t = None        # la traduzione normale sfora l'oggetto HMI: serve la versione breve
             if t is not None:
                 if t == '=':
@@ -437,8 +440,14 @@ def translate_batch(cfg, cores, langs, tm, glossary, hmi=None):
         prompt += '\n\nEsempi gia\' approvati (italiano ## ' + ' ## '.join(langs) + '):\n' + '\n'.join(ex)
     if hmi:
         prompt += '\n' + HMI_PROMPT
-        prompt += '\n\nLIMITI (riga: caratteri massimi): ' + ' ; '.join(
-            '%d: %d' % (n, hmi_max_len(_vis(s[2]), hmi)) for n, s in items if _vis(s[2])) + '\n'
+        per_lang = any(l in hmi.get('per_lingua', {}) for l in langs)   # soglie diverse: un limite per lingua
+        lim = []
+        for n, s in items:
+            if _vis(s[2]):
+                ms = [hmi_max_len(_vis(s[2]), hmi, l) for l in langs]
+                lim.append('%d: %s' % (n, ' / '.join(map(str, ms)) if per_lang else ms[0]))
+        prompt += '\n\nLIMITI (riga: caratteri massimi' + (', uno per lingua nell\'ordine indicato' if per_lang else '') + \
+                  '): ' + ' ; '.join(lim) + '\n'
     prompt += '\n\nTESTI:\n' + '\n'.join('%d ## %s' % (n, s[2].replace('\n', '\\n')) for n, s in items) + '\n'
     out, ntok = chat(cfg, prompt)
     parsed = {}
@@ -503,17 +512,20 @@ def import_corrections(path, tm, langs):
     return n
 
 # ---------------------------------------------------------------- apprendimento da Excel gia' tradotto
-def learn_from_project(project, tm, targets):
+def learn_from_project(project, tm, targets, hmi=None):
+    """Impara dalle traduzioni gia' presenti. Con hmi (hmi_settings) le righe HMI vanno nelle versioni brevi
+    ("<lingua>@hmi"): sono testi adattati allo spazio dell'oggetto e non devono finire negli allarmi."""
     n = 0
     for r in project.rows:
         core = r['src'].strip()
         if is_copy_rule(core):
             continue
+        suf = HMI_SUFFIX if is_hmi_row(r['cat'], r['vp'], hmi) else ''
         for l in targets:
             cur = r['cur'].get(l, '').strip()
             if cur and not is_placeholder(r['cur'][l], r['src']) and not re.fullmatch(r'(<field[^>]*/>)+', cur):
-                if tm.get(core, l) is None:
-                    tm.put(core, l, cur, 'excel'); n += 1
+                if tm.get(core, l + suf) is None:
+                    tm.put(core, l + suf, cur, 'excel'); n += 1
     return n
 
 def consistency_report(project, targets):

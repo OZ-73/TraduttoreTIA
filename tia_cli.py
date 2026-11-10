@@ -20,7 +20,7 @@ def main():
     if a.lingue:
         s.targets = a.lingue.split(',')
     if a.impara:
-        o = c.Project(a.impara, s.cfg); print('Appresi', c.learn_from_project(o, s.tm, o.targets)); s.tm.save()
+        o = c.Project(a.impara, s.cfg); print('Appresi', c.learn_from_project(o, s.tm, o.targets, c.hmi_settings(s.cfg))); s.tm.save()
     if a.importa:
         print('Importate', c.import_corrections(a.importa, s.tm, s.targets)); s.tm.save()
     e, p, st, notes = s.plan(); print(st, 'da tradurre:', len(p))

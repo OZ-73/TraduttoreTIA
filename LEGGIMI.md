@@ -21,7 +21,9 @@ Per le righe HMI (categorie in `categorie_hmi`, default `HMI screen` e `HMI runt
 - Se la memoria ha solo una traduzione normale che sfora, per quella riga HMI non viene usata e il testo viene riscritto in forma breve.
 - Le versioni brevi sono salvate nella memoria sotto `<lingua>@hmi`, **accanto** a quelle normali: un allarme con lo stesso testo italiano usa sempre la traduzione normale.
 - Nel CSV del residuo le righe HMI hanno il motivo che inizia con `HMI`: **non cambiare la colonna `motivo`**, così "Importa correzioni" le salva come versioni brevi.
-- Impostazioni… permette di cambiare soglia e margine e di spegnere il controllo (`controllo_lunghezza_hmi`). Soglia da tarare sul primo progetto con HMI reale: se i campi sono già al limite con l'italiano, scendi verso 10 %.
+- Impostazioni… permette di cambiare soglia e margine e di spegnere il controllo (`controllo_lunghezza_hmi`).
+- Soglie per lingua in `config.json` → `hmi_soglia_per_lingua` (default `{"pl-PL": 30}`: il polacco è mediamente più lungo dell'italiano; le altre lingue usano `hmi_soglia_percentuale`). Taratura fatta su G2290 (HMI già tradotto a mano e adattato): rapporto di lunghezza mediano/90° percentile en-US 0,90/1,00, es-MX 0,93/1,14, pl-PL 1,11/1,25.
+- "Impara da Excel già tradotto" salva le righe HMI come versioni brevi (`@hmi`), non nella memoria normale: i testi adattati all'oggetto non finiscono negli allarmi.
 
 ## File
 - `memoria_traduzione.json`: testi già tradotti (parte dal progetto Comipont); cresce a ogni uso. Tienila da parte: è il valore del sistema.

@@ -25,5 +25,8 @@
     "HMI runtime"
   ],
   "hmi_soglia_percentuale": 20,
+  "hmi_soglia_per_lingua": {
+    "pl-PL": 30
+  },
   "hmi_margine_minimo": 2
 }
