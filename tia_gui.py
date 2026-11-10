@@ -35,7 +35,7 @@ class App(tk.Tk):
         self.lang_frame.pack(fill='x', padx=8)
 
         self.var_alarms = tk.BooleanVar(value=False)
-        ttk.Checkbutton(self, text='Col modello traduci solo i testi di allarme (gli altri restano com\'erano, la memoria si applica comunque)',
+        ttk.Checkbutton(self, text='Col modello traduci solo HMI e allarmi (commenti di blocco e di tag restano com\'erano; la memoria vale sempre)',
                         variable=self.var_alarms, command=self.refresh_stats).pack(anchor='w', padx=10)
 
         self.var_graph = tk.BooleanVar(value=bool(self.s.cfg.get('escludi_graph', True)))

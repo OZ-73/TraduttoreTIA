@@ -48,7 +48,11 @@ DEFAULT_CONFIG = {
     "file_glossario": "glossario.txt",
     "file_classi": "classi_allarme.json",
     "escludi_graph": True,
-    "categorie_allarme": ["Alarm", "ProDiag", "testi di segnalazione", "text list"],
+    # modalita' "solo HMI e allarmi": col modello si traducono solo le righe la cui CATEGORIA contiene una di queste voci
+    # (senza distinguere maiuscole): ProgramAlarm (<FormattedUserAlarmTextCategory>), allarmi HMI (<Alarm>), classi di
+    # allarme, elenchi di testo PLC (<TextListTextCategoryData>), ProDiag, tutte le categorie <HMI ...>.
+    # Commenti di blocco e di tag restano com'erano. Il percorso (ViewPath) non conta: contiene nomi liberi.
+    "categorie_da_tradurre": ["Alarm", "TextListText", "ProDiag", "HMI"],
     # testi HMI: lo spazio nell'oggetto e' limitato, la traduzione non deve sforare
     "controllo_lunghezza_hmi": True,
     "categorie_hmi": ["HMI screen", "HMI runtime"],     # i commenti HMI non si vedono a video: nessun limite
@@ -377,7 +381,7 @@ def build_plan(project, tm, classes, targets, only_cats=None, exclude_graph=Fals
                 if cur != val:
                     edits[(r['row'], letter)] = (val, 'tm'); stats['tm'] += 1
             else:
-                if only_cats and not any(c in r['cat'] or c in r['vp'] for c in only_cats):
+                if only_cats and not any(c.lower() in r['cat'].lower() for c in only_cats):
                     stats['fuori_filtro'] = stats.get('fuori_filtro', 0) + 1
                     continue
                 (pending_hmi if row_hmi else pending).setdefault(core, set()).add(lang)
@@ -631,7 +635,7 @@ class Session:
         return self.project
 
     def plan(self):
-        cats = self.cfg.get('categorie_allarme') if self.only_alarms else None
+        cats = self.cfg.get('categorie_da_tradurre') if self.only_alarms else None
         res = build_plan(self.project, self.tm, self.classes, self.targets, cats,
                          bool(self.cfg.get('escludi_graph')), hmi_settings(self.cfg))
         self.pending_hmi = res[2].pop('pending_hmi', {})

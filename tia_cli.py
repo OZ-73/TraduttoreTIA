@@ -11,7 +11,7 @@ def main():
     ap.add_argument('excel')
     ap.add_argument('--out'); ap.add_argument('--traduci', action='store_true')
     ap.add_argument('--residuo'); ap.add_argument('--importa'); ap.add_argument('--impara')
-    ap.add_argument('--solo-allarmi', action='store_true')
+    ap.add_argument('--solo-allarmi', action='store_true', help='col modello solo HMI e allarmi (config: categorie_da_tradurre)')
     ap.add_argument('--lingue', help='es. en-US,de-DE (default: tutte)')
     a = ap.parse_args()
     s = c.Session()

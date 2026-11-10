@@ -12,11 +12,11 @@
   "file_tm": "memoria_traduzione.json",
   "file_glossario": "glossario.txt",
   "file_classi": "classi_allarme.json",
-  "categorie_allarme": [
+  "categorie_da_tradurre": [
     "Alarm",
+    "TextListText",
     "ProDiag",
-    "testi di segnalazione",
-    "text list"
+    "HMI"
   ],
   "escludi_graph": true,
   "controllo_lunghezza_hmi": true,

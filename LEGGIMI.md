@@ -12,7 +12,7 @@ LM Studio con il server attivo (Developer → Status: Running) e il modello cari
 6. **6. Salva Excel tradotto** (con verifica cella per cella) → importa in TIA → archivia.
 
 - GRAPH: i nomi di passi e transizioni (riconosciuti dal percorso: liste di sistema SYSTEM_StepNames / SYSTEM_TransitionNames) non vengono tradotti (casella nella finestra, `escludi_graph` in config).
-- Per progetti grandi: spunta "Col modello traduci solo i testi di allarme" (categorie in `config.json` → `categorie_allarme`; CLI: `--solo-allarmi`).
+- Per progetti grandi: spunta "Col modello traduci solo HMI e allarmi" (CLI: `--solo-allarmi`). Col modello si traducono solo le righe la cui **categoria** (colonna Category) contiene una voce di `config.json` → `categorie_da_tradurre` (default `Alarm`, `TextListText`, `ProDiag`, `HMI`): ProgramAlarm (`<FormattedUserAlarmTextCategory>`), allarmi HMI (`<Alarm>`), classi di allarme, elenchi di testo PLC (`<TextListTextCategoryData>`) e tutte le categorie `<HMI …>`. Commenti di blocco (`<BlockCommentCategoryData>`) e di tag (`<TagCommentCategoryData>`) restano com'erano; la memoria si applica comunque a tutte le righe. Il percorso (ViewPath) non conta più.
 
 ## Lunghezza dei testi HMI
 Nell'Excel non c'è la larghezza degli oggetti: l'unico riferimento è la lunghezza dell'originale italiano.
