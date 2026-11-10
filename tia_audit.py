@@ -118,12 +118,13 @@ def _issues(src, cur, lang, ctx):
     # numeri e lato A/B
     ns = collections.Counter(re.findall(r'\d+', c.FIELD_RE.sub('', s)))
     nt = collections.Counter(re.findall(r'\d+', c.FIELD_RE.sub('', t)))
-    for w in re.findall(r'(?<!\w)(?:zero|cero|null)(?!\w)', c.FIELD_RE.sub('', t), re.I):   # "a 0" tradotto "to Zero"
-        nt['0'] += 1
+    if not re.search(r'(?<!\w)zero(?!\w)', s, re.I):      # "a 0" tradotto "to Zero" (ma "Premere ZERO" non e' un numero)
+        for w in re.findall(r'(?<!\w)(?:zero|cero|null)(?!\w)', c.FIELD_RE.sub('', t), re.I):
+            nt['0'] += 1
     if ns != nt and ns:
         out.append(('errore', 'numeri diversi dall\'originale (originale: %s; traduzione: %s)' % (
             ' '.join(sorted(ns.elements())) or '-', ' '.join(sorted(nt.elements())) or '-'), None, ''))
-    ms = re.search(r'\b(?:lato|side|lado|seite|strona)\s+([A-Z])\b', s, re.I)
+    ms = None if re.search(r'\b[A-Z]\s*/\s*[A-Z]\b', s) else re.search(r'\b(?:lato|side|lado|seite|strona)\s+([A-Z])\b', s, re.I)   # "Lato A/B": nessun lato
     mt = re.search(r'\b(?:lato|side|lado|seite|strona)\s+([A-Z])\b|\b([A-Z])\s+(?:side|lado|seite)\b', t, re.I)
     if ms and mt and ms.group(1).upper() != (mt.group(1) or mt.group(2)).upper():
         out.append(('errore', 'lato diverso dall\'originale (%s)' % ms.group(1).upper(), None, ''))

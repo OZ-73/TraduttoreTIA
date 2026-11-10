@@ -11,6 +11,7 @@
 refuso ; en ; Breackage ; Breakage
 refuso ; en ; Lenght ; Length
 refuso ; en ; Aquire ; Acquire
+refuso ; en ; Operning ; Opening
 refuso ; en ; TRASLATION ; TRANSLATION
 refuso ; en ; UNWILDER ; UNWINDER
 refuso ; en ; Non Out of the Way ; Not Out of the Way
@@ -26,8 +27,8 @@ termine ; pl ; traslazion ; ma[cć]zenie\w*|t[łl]umacz\w* ; Przesuw ; traslazio
 termine ; es ; traslazion ; traducci\w+ ; Traslación ; traslazione = spostamento, non traduzione linguistica
 termine ; pl ; avanzator ; wyrzutnik\w*|advancer ; Podajnik ; l'avanzatore alimenta la macchina: podajnik (wyrzutnik = espulsore)
 termine ; en ; avanzator ; advancer ; Feeder ; l'avanzatore alimenta la macchina con la bobina: Feeder (glossario), non Advancer
-termine ; es ; avanzator ; \bavance\b|\bavanzador\b|\badelantad\w* ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador (avance = avanzamento)
-termine ; en ; avanzament ; advan\w* ; Feeder ; nel progetto l'avanzamento e' quello dell'avanzatore (Feeder); "Advancer" e' una resa alla lettera. Se il testo indica un movimento generico, usa Feed
+termine ; es ; avanzator ; \bavanzador\b|\badelantad\w* ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador
+termine ; es ; ^\s*(mc\s+)?avanzator[ei]\s*$ ; \bavance\b ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador (avance = avanzamento)
 termine ; pl ; flang ; bloczek|bloczk\w* ; Kołnierz ; bloczek = blocchetto; flangia = kołnierz
 termine ; es ; rullatur ; rodante ; Laminación ; rodante = che rotola
 termine ; en ; \bquot[ae]\b|\bquote\b ; \bquotas?\b|\bquotes?\b ; Position ; le quote sono le posizioni (glossario: Quota = Position)
