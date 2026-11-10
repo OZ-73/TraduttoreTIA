@@ -12,7 +12,6 @@ refuso ; en ; Breackage ; Breakage
 refuso ; en ; Lenght ; Length
 refuso ; en ; Aquire ; Acquire
 refuso ; en ; TRASLATION ; TRANSLATION
-refuso ; en ; ADVANVER ; ADVANCER
 refuso ; en ; UNWILDER ; UNWINDER
 refuso ; en ; Non Out of the Way ; Not Out of the Way
 refuso ; pl ; ZEROTYLKO ; ZERO TYLKO
@@ -28,6 +27,7 @@ termine ; es ; traslazion ; traducci\w+ ; Traslación ; traslazione = spostament
 termine ; pl ; avanzator ; wyrzutnik\w*|advancer ; Podajnik ; l'avanzatore alimenta la macchina: podajnik (wyrzutnik = espulsore)
 termine ; en ; avanzator ; advancer ; Feeder ; l'avanzatore alimenta la macchina con la bobina: Feeder (glossario), non Advancer
 termine ; es ; avanzator ; \bavance\b|\bavanzador\b|\badelantad\w* ; Alimentador ; l'avanzatore alimenta la macchina con la bobina: alimentador (avance = avanzamento)
+termine ; en ; avanzament ; advan\w* ; Feed ; avanzamento = movimento di alimentazione: Feed (glossario); Advancer e' l'avanzatore tradotto alla lettera
 termine ; pl ; flang ; bloczek|bloczk\w* ; Kołnierz ; bloczek = blocchetto; flangia = kołnierz
 termine ; es ; rullatur ; rodante ; Laminación ; rodante = che rotola
 termine ; en ; \bquot[ae]\b|\bquote\b ; \bquotas?\b|\bquotes?\b ; Position ; le quote sono le posizioni (glossario: Quota = Position)
