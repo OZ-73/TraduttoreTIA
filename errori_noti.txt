@@ -1,0 +1,36 @@
+# Errori noti: usati da "Controlla traduzioni esistenti". Modificabile a mano; si arricchisce con l'uso.
+# Separatore: punto e virgola. Le righe che iniziano con # sono commenti.
+# La lingua puo' essere '*' (tutte), un codice lingua intero (es-MX) o solo la lingua (es = tutte le varianti).
+#
+# refuso ; lingua ; sbagliato ; giusto
+#   parola o frase sbagliata (anche se scritta in maiuscolo): la proposta e' sicura e viene preimpostata ("applica" = s).
+# termine ; lingua ; regex italiano ; regex della resa sbagliata ; resa suggerita ; nota
+#   falso amico o termine tecnico sbagliato: se il testo italiano contiene la prima regex e la traduzione la seconda,
+#   viene segnalato con la resa suggerita (da confermare: "applica" resta vuoto).
+
+refuso ; en ; Breackage ; Breakage
+refuso ; en ; Lenght ; Length
+refuso ; en ; Aquire ; Acquire
+refuso ; en ; TRASLATION ; TRANSLATION
+refuso ; en ; ADVANVER ; ADVANCER
+refuso ; en ; UNWILDER ; UNWINDER
+refuso ; en ; Non Out of the Way ; Not Out of the Way
+refuso ; pl ; ZEROTYLKO ; ZERO TYLKO
+refuso ; pl ; Cyclu ; Cyklu
+
+termine ; en ; bussol ; compass ; Bushing ; bussola/bussole in meccanica = bushing, non bussola magnetica
+termine ; es ; bussol ; br[uú]jula ; Casquillo ; bussola/bussole in meccanica = casquillo
+termine ; pl ; bussol ; opask\w*|kompas\w* ; Tuleja ; bussola/bussole in meccanica = tuleja
+termine ; es ; \bmors ; vicio ; Mordaza ; vicio = difetto; la morsa e' la mordaza
+termine ; es ; \bimpost ; impuesto ; Ajustar ; impuesto = tassa; impostare = ajustar/configurar
+termine ; pl ; traslazion ; ma[cć]zenie\w*|t[łl]umacz\w* ; Przesuw ; traslazione = spostamento, non traduzione linguistica
+termine ; es ; traslazion ; traducci\w+ ; Traslación ; traslazione = spostamento, non traduzione linguistica
+termine ; pl ; avanzator ; wyrzutnik\w* ; Podajnik ; wyrzutnik = espulsore
+termine ; es ; avanzator ; \bavance\b ; Avanzador ; avance = avanzamento
+termine ; pl ; flang ; bloczek|bloczk\w* ; Kołnierz ; bloczek = blocchetto; flangia = kołnierz
+termine ; es ; rullatur ; rodante ; Laminación ; rodante = che rotola
+termine ; en ; \bquot[ae]\b|\bquote\b ; \bquotas?\b|\bquotes?\b ; Position ; le quote sono le posizioni (glossario: Quota = Position)
+termine ; es ; \bquot[ae]\b|\bquote\b ; acciones ; Posiciones ; acciones = azioni (finanza); le quote sono le posizioni
+termine ; en ; \bmedi[oa]\b ; \bmedium\b ; Average ; medium = di taglia media; il valore medio e' average
+termine ; pl ; paratia ; przesun\w* ; Przegroda ; przesunięcie = spostamento; paratia = przegroda
+termine ; es ; \bscart ; desperd\w* ; Descarte ; desperdiciar = sprecare

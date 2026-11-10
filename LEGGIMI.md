@@ -25,9 +25,22 @@ Per le righe HMI (categorie in `categorie_hmi`, default `HMI screen` e `HMI runt
 - Soglie per lingua in `config.json` → `hmi_soglia_per_lingua` (default `{"pl-PL": 30}`: il polacco è mediamente più lungo dell'italiano; le altre lingue usano `hmi_soglia_percentuale`). Taratura fatta su G2290 (HMI già tradotto a mano e adattato): rapporto di lunghezza mediano/90° percentile en-US 0,90/1,00, es-MX 0,93/1,14, pl-PL 1,11/1,25.
 - "Impara da Excel già tradotto" salva le righe HMI come versioni brevi (`@hmi`), non nella memoria normale: i testi adattati all'oggetto non finiscono negli allarmi.
 
+## Controllo delle traduzioni già presenti
+Per un Excel già tradotto (a mano, con Google Translate, da un fornitore): **Controlla traduzioni esistenti (CSV)…** (CLI: `--controlla file.csv`). Rispetta lingue scelte, ambito "solo HMI e allarmi" e GRAPH. Non usa il modello e non cambia nulla: produce un CSV, una riga per gruppo di celle identiche, con le righe Excel complete.
+- **livello `errore`**: segnaposto `<field>` diversi, numeri diversi dall'originale (es. FL2 → FL1, SP32803 → SP12803), lato A/B diverso, testo predefinito TIA rimasto (ON/OFF/Text), parole italiane rimaste, contraddizioni (max/min, apri/chiudi, avanti/indietro, abilita/disabilita, destra/sinistra, carico/scarico, su/giù), refusi noti.
+- **`termine`**: glossario non rispettato e falsi amici/termini tecnici sbagliati (`errori_noti.txt`, es. bussola = bushing, non compass).
+- **`mancante`**: celle vuote o ancora col testo originale; la proposta viene dalla memoria se c'è.
+- **`verifica`**: uguale alla traduzione inglese (forse non tradotta), stesso italiano tradotto in modi diversi, traduzione che coincide con un altro testo italiano, numero di righe diverso, troppo lunga per HMI (con testi già adattati a mano è normale che ce ne siano pochi).
+- Il controllo trova gli errori **di forma e di vocabolario noto**, non quelli di senso (una frase fluente ma sbagliata passa): per quelli manda il CSV a Claude in chat. Nei test su G2290 ha segnalato 102 su 111 righe con errori certi trovati a mano; le 9 mancate erano semantiche.
+- `errori_noti.txt` è modificabile a mano (formato nel file): `refuso` = sostituzione sicura (applica = s preimpostato), `termine` = resa sbagliata con suggerimento da confermare. Aggiungi i tuoi errori ricorrenti.
+- Nel controllo "uguale alla traduzione inglese" e il glossario vengono confrontati con ciò che c'è nel progetto: un termine di progetto diverso dal glossario (es. Avanzatore: Advancer nel progetto, Feeder nel glossario) esce come `termine`; decidi se cambiare il glossario o il progetto.
+
+**Applicare le correzioni** (le traduzioni esistenti non vengono mai toccate dal flusso normale): correggi nel CSV la colonna `proposta` e metti `s` in `applica` per le righe da scrivere (per i refusi noti è già così), poi **Applica correzioni del controllo a un Excel…** (CLI: `--applica-controllo file.csv --out nuovo.xlsx`). Scrive in una copia, solo nelle celle che contengono ancora il testo controllato, e scarta le proposte con segnaposto `<field>` o numero di righe diversi dall'originale. Le correzioni entrano anche nella memoria come "rivisto" (versioni brevi `@hmi` per le righe HMI).
+
 ## File
 - `memoria_traduzione.json`: testi già tradotti (parte dal progetto Comipont); cresce a ogni uso. Tienila da parte: è il valore del sistema.
 - `glossario.txt`: termini fissi (modificabile a mano: `italiano | inglese | tedesco`, `=` invariato).
+- `errori_noti.txt`: refusi e falsi amici noti per il controllo delle traduzioni esistenti (modificabile a mano).
 - `classi_allarme.json`: nomi e sigle delle classi per lingua.
 - `config.json`: impostazioni (anche da pulsante).
 

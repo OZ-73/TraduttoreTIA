@@ -47,6 +47,7 @@ DEFAULT_CONFIG = {
     "file_tm": "memoria_traduzione.json",
     "file_glossario": "glossario.txt",
     "file_classi": "classi_allarme.json",
+    "file_errori_noti": "errori_noti.txt",
     "escludi_graph": True,
     # modalita' "solo HMI e allarmi": col modello si traducono solo le righe la cui CATEGORIA contiene una di queste voci
     # (senza distinguere maiuscole): ProgramAlarm (<FormattedUserAlarmTextCategory>), allarmi HMI (<Alarm>), classi di
@@ -185,7 +186,11 @@ class Glossary:
 # ---------------------------------------------------------------- controlli
 IT_WORDS = {'della', 'delle', 'degli', 'dello', 'nella', 'nelle', 'sono', 'viene', 'dopo', 'prima',
             'posizione', 'allarme', 'allarmi', 'velocità', 'tubo', 'attesa', 'comando', 'ciclo',
-            'abilitato', 'raggiunta', 'raggiunto', 'dalla', 'dallo', 'quando', 'senza', 'anche'}
+            'abilitato', 'raggiunta', 'raggiunto', 'dalla', 'dallo', 'quando', 'senza', 'anche',
+            'valore', 'pezzo', 'guadagno', 'stazione', 'azionamento', 'apri', 'chiudi', 'scarico', 'carico',
+            'impostato', 'impostata', 'errore', 'guasto', 'rottura', 'mancanza'}
+# parole della lista che nella lingua indicata sono corrette (spagnolo/portoghese: tubo, ciclo, comando)
+IT_WORDS_VALID = {'es': {'tubo', 'ciclo', 'comando'}, 'pt': {'tubo', 'ciclo', 'comando'}}
 
 def prefix_tokens(s):
     m = re.match(r'^((?:SR|TR|S|T|sr|tr|s|t)\s+)', s)
@@ -248,7 +253,7 @@ def check_translation(src, tr, lang, glossary, hmi=None):
     if l_s and l_s != l_t and not p_s:
         r.append('simboli iniziali "%s" non mantenuti' % l_s)
     words = set(re.findall(r'[A-Za-zÀ-ÿ]+', tr.lower()))
-    left = sorted(words & IT_WORDS)
+    left = sorted((words & IT_WORDS) - IT_WORDS_VALID.get(lang.split('-')[0], set()))
     if left and not lang.startswith('it'):
         r.append('parole italiane rimaste: ' + ', '.join(left))
     if tr.strip() == src.strip() and has_letters(src) and len(src) > 4:
@@ -714,6 +719,34 @@ class Session:
                 break
         self.tm.save()
         return total, len(self.review)
+
+    def audit(self, csv_path=None):
+        """Controlla le traduzioni gia' presenti (vedi tia_audit). Rispetta lingue scelte, ambito e GRAPH."""
+        import tia_audit as au
+        known = au.KnownErrors(rel(self.cfg.get('file_errori_noti', 'errori_noti.txt')))
+        cats = self.cfg.get('categorie_da_tradurre') if self.only_alarms else None
+        groups = au.audit_project(self.project, self.targets, self.glossary, self.tm, known,
+                                  hmi_settings(self.cfg), cats, bool(self.cfg.get('escludi_graph')))
+        if csv_path:
+            au.export_audit(csv_path, groups)
+        return groups
+
+    def apply_audit_csv(self, csv_path, out_path):
+        """Scrive nell'Excel (copia) le correzioni del CSV di controllo con applica = s. Cambia solo celle che
+        contengono ancora il testo controllato; le correzioni entrano anche nella memoria come "rivisto"."""
+        import tia_audit as au
+        edits, learn, bad = au.plan_corrections(self.project, au.read_audit_corrections(csv_path))
+        sheet = self.project.ws.title
+        ok, skipped = write_edits(self.project.path, out_path, sheet, edits)
+        diff, anomalie = verify_output(self.project.path, out_path, sheet, edits)
+        sk = set(skipped)
+        hmi = hmi_settings(self.cfg)
+        for core, lang, txt, r in learn:
+            if (r['row'], self.project.cols[lang]) in sk:
+                continue
+            self.tm.put(core, lang + (HMI_SUFFIX if is_hmi_row(r['cat'], r['vp'], hmi) else ''), txt, 'rivisto')
+        self.tm.save()
+        return {'scritte': ok, 'saltate': len(skipped) + len(bad), 'modificate': diff, 'anomalie': anomalie, 'scartate': bad}
 
     def save_excel(self, out_path):
         edits, pending, stats, notes = self.plan()

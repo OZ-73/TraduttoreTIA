@@ -4,6 +4,7 @@ import os, sys, threading, queue
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import tia_core as core
+import tia_audit as core_audit
 
 class App(tk.Tk):
     def __init__(self):
@@ -53,7 +54,9 @@ class App(tk.Tk):
                 ('5. Importa correzioni (CSV)', self.on_import),
                 ('6. Salva Excel tradotto…', self.on_save),
                 ('Impara da Excel già tradotto…', self.on_learn),
-                ('Controllo coerenza', self.on_consistency)]
+                ('Controllo coerenza', self.on_consistency),
+                ('Controlla traduzioni esistenti (CSV)…', self.on_audit),
+                ('Applica correzioni del controllo a un Excel…', self.on_apply_audit)]
         for i, (t, f) in enumerate(spec):
             b = ttk.Button(bf, text=t, command=f)
             b.grid(row=i // 2, column=i % 2, sticky='ew', padx=4, pady=3)
@@ -234,6 +237,40 @@ class App(tk.Tk):
         self.log('Coerenza: %d testi con traduzioni diverse.' % len(rep))
         for c, l, v in rep[:40]:
             self.log('  [%s] %s -> %s' % (l, c[:50], ' | '.join(v)))
+
+    def on_audit(self):
+        if not self.need_file():
+            return
+        base = os.path.splitext(os.path.basename(self.s.project.path))[0]
+        p = filedialog.asksaveasfilename(defaultextension='.csv', initialfile=base + '_controllo.csv', filetypes=[('CSV', '*.csv')])
+        if not p:
+            return
+        def work():
+            self.s.reload_resources()
+            return core_audit.summary(self.s.audit(p))
+        self.log('Controllo delle traduzioni esistenti…')
+        self.run_bg(work, lambda r: 'Controllo finito (celle): errori %d, termini %d, mancanti %d, da verificare %d. '
+                                    'Salvato in %s. Mandalo a Claude in chat per la rilettura; poi "Applica correzioni".' %
+                                    (r['errore'], r['termine'], r['mancante'], r['verifica'], p))
+
+    def on_apply_audit(self):
+        if not self.need_file():
+            return
+        p = filedialog.askopenfilename(title='CSV del controllo corretto (colonne "proposta" e "applica")', filetypes=[('CSV', '*.csv')])
+        if not p:
+            return
+        base = os.path.splitext(os.path.basename(self.s.project.path))[0]
+        o = filedialog.asksaveasfilename(defaultextension='.xlsx', initialfile=base + '_corretto.xlsx', filetypes=[('Excel', '*.xlsx')])
+        if not o:
+            return
+        if os.path.abspath(o) == os.path.abspath(self.s.project.path):
+            messagebox.showerror('Traduttore TIA', 'Scegli un nome diverso dall\'originale.'); return
+        def msg(r):
+            for row, lang, why in r['scartate'][:15]:
+                self.q.put(('log', '  scartata riga %s [%s]: %s' % (row, lang, why)))
+            return ('Correzioni applicate. Celle scritte: %(scritte)d, scartate: %(saltate)d, modificate: %(modificate)d, anomalie: %(anomalie)d. '
+                    'Le correzioni sono entrate anche in memoria ("rivisto").') % r
+        self.run_bg(lambda: self.s.apply_audit_csv(p, o), msg)
 
     def on_settings(self):
         w = tk.Toplevel(self); w.title('Impostazioni'); w.grab_set()

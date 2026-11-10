@@ -2,7 +2,9 @@
 """Riga di comando opzionale. Esempi:
   python tia_cli.py progetto.xlsx --out progetto_tradotto.xlsx --traduci --residuo residuo.csv
   python tia_cli.py progetto.xlsx --importa residuo_corretto.csv --out progetto_tradotto.xlsx
-  python tia_cli.py progetto.xlsx --impara altro_progetto_tradotto.xlsx"""
+  python tia_cli.py progetto.xlsx --impara altro_progetto_tradotto.xlsx
+  python tia_cli.py progetto.xlsx --controlla controllo.csv --solo-allarmi        (controlla le traduzioni esistenti)
+  python tia_cli.py progetto.xlsx --applica-controllo controllo_corretto.csv --out progetto_corretto.xlsx"""
 import argparse
 import tia_core as c
 
@@ -11,6 +13,7 @@ def main():
     ap.add_argument('excel')
     ap.add_argument('--out'); ap.add_argument('--traduci', action='store_true')
     ap.add_argument('--residuo'); ap.add_argument('--importa'); ap.add_argument('--impara')
+    ap.add_argument('--controlla', help='CSV: controlla le traduzioni gia\' presenti'); ap.add_argument('--applica-controllo', help='CSV corretto da applicare (richiede --out)')
     ap.add_argument('--solo-allarmi', action='store_true', help='col modello solo HMI e allarmi (config: categorie_da_tradurre)')
     ap.add_argument('--lingue', help='es. en-US,de-DE (default: tutte)')
     a = ap.parse_args()
@@ -23,6 +26,10 @@ def main():
         o = c.Project(a.impara, s.cfg); print('Appresi', c.learn_from_project(o, s.tm, o.targets, c.hmi_settings(s.cfg))); s.tm.save()
     if a.importa:
         print('Importate', c.import_corrections(a.importa, s.tm, s.targets)); s.tm.save()
+    if a.controlla:
+        import tia_audit; print('Controllo:', dict(tia_audit.summary(s.audit(a.controlla))), '->', a.controlla); return
+    if a.applica_controllo:
+        r = s.apply_audit_csv(a.applica_controllo, a.out); print({k: v for k, v in r.items() if k != 'scartate'}); [print('  scartata', x) for x in r['scartate']]; return
     e, p, st, notes = s.plan(); print(st, 'da tradurre:', len(p))
     if a.traduci:
         print(s.translate_pending(lambda d, n, el, t: print('%d/%d %ds' % (d, n, el))))
